@@ -64,15 +64,18 @@ def step(payload: ActionPayload):
 
 @app.get("/state")
 def state():
-    s = env.state
-    return JSONResponse(content={
-        "episode_id":         s.episode_id,
-        "step_count":         s.step_count,
-        "accumulated_reward": s.accumulated_reward,
-        "last_action_type":   s.last_action_type,
-        "task_id":            s.task_id,
-        "is_done":            s.is_done,
-    })
+    try:
+        s = env.state
+        return JSONResponse(content={
+            "episode_id":         s.episode_id,
+            "step_count":         s.step_count,
+            "accumulated_reward": s.accumulated_reward,
+            "last_action_type":   s.last_action_type,
+            "task_id":            s.task_id,
+            "is_done":            s.is_done,
+        })
+    except RuntimeError:
+        return JSONResponse(content={"error": "Call /reset first"}, status_code=400)
 
 
 @app.get("/health")
