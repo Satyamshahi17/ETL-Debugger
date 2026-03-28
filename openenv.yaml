@@ -1,0 +1,161 @@
+name: etl-debugger
+version: "1.0.0"
+description: >
+  An RL environment where agents fix broken data pipelines.
+  Three tasks of increasing difficulty: type mismatch, join failure,
+  and silent data corruption. Fully deterministic graders, dense reward signal.
+
+domain: data-engineering
+tags:
+  - data-cleaning
+  - debugging
+  - etl
+  - pandas
+  - openenv
+
+author:
+  - name: Satyam Kumar
+
+license: MIT
+
+environment:
+  class: server.pipeline_environment.PipelineEnvironment
+  module: server.pipeline_environment
+
+  observation_space:
+    type: object
+    schema: models.PipelineObservation
+    description: >
+      Typed dataclass extending openenv Observation base.
+      Contains broken DataFrame JSON, column schema, error log,
+      action history, optional hint, plus inherited done/reward/metadata.
+
+  action_space:
+    type: object
+    schema: models.PipelineAction
+    description: >
+      Typed dataclass extending openenv Action base.
+      Fields: action_type (str), column (str|null), params (dict).
+    actions:
+      - name: fix_column
+        description: Apply a string transform to a column (strip_currency, strip_whitespace, etc.)
+        params:
+          transform: "strip_currency | strip_whitespace | lowercase | uppercase"
+      - name: cast_type
+        description: Cast a column to a target dtype
+        params:
+          dtype: "float64 | int64 | str | bool | datetime"
+      - name: drop_rows
+        description: Drop rows matching a condition or where column is null
+        params:
+          condition: "pandas eval string, e.g. 'revenue < 0'"
+          drop_nulls: "bool"
+      - name: rename_column
+        description: Rename a column
+        params:
+          new_name: "target column name"
+      - name: fill_nulls
+        description: Fill NaN values using a strategy
+        params:
+          strategy: "mean | median | zero | forward | backward"
+          value: "literal fill value (overrides strategy)"
+      - name: split_column
+        description: Split a string column into multiple new columns
+        params:
+          delimiter: "split character, default '_'"
+          new_cols: "list of new column names"
+      - name: merge_columns
+        description: Concatenate multiple columns into one
+        params:
+          other_cols: "list of additional column names"
+          separator: "string separator, default ' '"
+          new_col_name: "name for merged column"
+      - name: reorder_columns
+        description: Reorder DataFrame columns
+        params:
+          order: "list of column names in desired order"
+      - name: done
+        description: Signal that the agent believes the pipeline is fixed
+
+  state_space:
+    type: object
+    schema: models.PipelineState
+    description: >
+      Episode metadata: episode_id, step_count, accumulated_reward,
+      last_action_type, consecutive_loops, task_id, is_done.
+
+tasks:
+  - id: easy
+    description: >
+      The 'revenue' column was loaded as a currency-formatted string
+      (e.g. '$1,234.56') instead of float64.
+      Agent must strip symbols and cast to float.
+    difficulty: easy
+    max_steps: 20
+    grader: graders.grader_easy.grade
+    expected_score_gpt4o: 0.92
+
+  - id: medium
+    description: >
+      A left-join between orders and users failed because the join key
+      is 'user_id' in orders but 'userId' in users (camelCase mismatch).
+      Result has NaN-filled name and tier columns.
+      Agent must rename the key column to fix the join artifact.
+    difficulty: medium
+    max_steps: 20
+    grader: graders.grader_medium.grade
+    expected_score_gpt4o: 0.65
+
+  - id: hard
+    description: >
+      A date-range filter used strict '>' instead of '>=' silently dropping
+      the boundary row. Additionally, category D daily_total values were
+      zeroed out. No exception is raised — agent must detect the anomaly
+      by auditing row counts and value distributions.
+    difficulty: hard
+    max_steps: 20
+    grader: graders.grader_hard.grade
+    expected_score_gpt4o: 0.31
+
+reward:
+  range: [-0.30, 1.0]
+  type: dense
+  description: >
+    Computed on every step. Components:
+      schema_match    (0.40) — column names and dtypes vs ground truth
+      row_correctness (0.30) — % of row values matching ground truth
+      null_handling   (0.20) — null distribution vs ground truth
+      efficiency      (0.10) — penalises redundant repeated actions
+      loop_penalty   (-0.30 flat) — applied when same action repeated 3+ times
+
+server:
+  framework: fastapi
+  entrypoint: server/app.py
+  default_port: 7860
+  health_endpoint: /health
+  environment_variables:
+    TASK_ID:
+      description: Which task to load (easy | medium | hard)
+      default: easy
+
+docker:
+  image: etl-debugger
+  dockerfile: server/Dockerfile
+  build_context: .
+
+huggingface:
+  space_type: docker
+  sdk: docker
+  tags:
+    - openenv
+    - rl-environment
+    - data-engineering
+
+baseline:
+  script: baseline/run_baseline.py
+  model: gpt-4o
+  results_file: baseline/results.json
+  scores:
+    easy:   0.92
+    medium: 0.65
+    hard:   0.31

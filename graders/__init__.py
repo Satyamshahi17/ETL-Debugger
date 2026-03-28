@@ -1,0 +1,1 @@
+# __init__.py in graders/ and tasks/ only exists to tell Python "this folder is a package" — so that imports like from graders.grader_easy import grade work.
