@@ -44,6 +44,14 @@ def root():
         "endpoints": ["/reset", "/step", "/state", "/health"]
     }
 
+@app.get("/web")
+def web():
+    return JSONResponse(content={
+        "name": "ETLDebugger",
+        "description": "OpenEnv-compliant ETL pipeline debugging environment",
+        "docs": "/docs",
+        "endpoints": ["/reset", "/step", "/state", "/health"]
+    })
 
 @app.post("/reset")
 def reset():
