@@ -1,12 +1,3 @@
----
-title: ETLDebugger
-emoji: 🔧
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
----
-
 # ETLDebugger
 
 > An [OpenEnv](https://github.com/meta-pytorch/OpenEnv)-compliant reinforcement learning environment where agents learn to debug broken data pipelines.
