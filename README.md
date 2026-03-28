@@ -23,7 +23,7 @@ pinned: false
 
 Data engineers spend a significant portion of their time debugging ETL pipelines — wrong column types loaded from CSVs, silent join failures due to key mismatches, and aggregation bugs that produce plausible-looking but incorrect results. These are real, high-stakes errors that cost companies millions in downstream decisions made on bad data.
 
-Yet no RL environment exists to train or evaluate agents on this exact skill. Most agent benchmarks focus on code generation or question answering. **ETLDebugger fills this gap** — it provides a structured, episodic environment where an agent must inspect a broken DataFrame, reason about what went wrong, and apply a sequence of corrective actions to restore it to ground truth.
+ETLDebugger provides a structured, episodic environment where an agent must inspect a broken DataFrame, reason about what went wrong, and apply a sequence of corrective actions to restore it to ground truth.
 
 ---
 
