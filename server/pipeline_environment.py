@@ -32,6 +32,8 @@ except ImportError:
         """Minimal stand-in when openenv package is not installed."""
         pass
 
+    from dataclasses import dataclass as _state_dc
+    @_state_dc
     class State:
         episode_id: str = ""
         step_count: int = 0
@@ -191,7 +193,7 @@ class PipelineEnvironment(Environment):
             task_id=self.task_id,
             step=self._state.step_count if self._state else 0,
             dataframe_json=df.to_json(orient="split", default_handler=str),
-            schema=schema,
+            column_schema=schema,
             error_log=error_log,
             previous_actions=list(self._get_history()),
             hint=hint,
