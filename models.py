@@ -1,129 +1,66 @@
 """
-models.py — Pipeline Debug Environment
-Typed Action, Observation, and State models following the OpenEnv spec.
-
-Per RFC 002: Observation base class carries `done`, `reward`, and `metadata`.
-Models use Python dataclasses extending openenv.core.env_server base types.
+models.py — ETLDebugger
+OpenEnv-compliant models using Pydantic per official docs.
+Imports from openenv.core.env_server.types as specified.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
+from pydantic import Field
 
 try:
-    from openenv.core.env_server import Action, Observation, State
+    from openenv.core.env_server.types import Action, Observation
 except ImportError:
-    # Fallback base classes when openenv is not installed (for local dev / testing)
-    from dataclasses import dataclass as _dc
-
-    @_dc(kw_only=True)
-    class Observation:
-        done: bool = False
-        reward: Union[bool, int, float, None] = None
-        metadata: Dict[str, Any] = field(default_factory=dict)
-
-    @_dc
-    class Action:
+    from pydantic import BaseModel
+    class Action(BaseModel):
         pass
+    class Observation(BaseModel):
+        done: bool = False
+        reward: Optional[float] = None
+        metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    @_dc
-    class State:
-        episode_id: str = ""
-        step_count: int = 0
-
-
-# ---------------------------------------------------------------------------
-# Action
-# ---------------------------------------------------------------------------
 
 VALID_ACTION_TYPES = {
-    "fix_column",
-    "cast_type",
-    "drop_rows",
-    "rename_column",
-    "fill_nulls",
-    "split_column",
-    "merge_columns",
-    "reorder_columns",
-    "done",
+    "fix_column", "cast_type", "drop_rows", "rename_column",
+    "fill_nulls", "split_column", "merge_columns", "reorder_columns", "done",
 }
 
 
-@dataclass
 class PipelineAction(Action):
-    """
-    A single corrective operation the agent applies to the broken DataFrame.
-
-    action_type : one of VALID_ACTION_TYPES
-    column      : target column name (required for most actions)
-    params      : action-specific keyword arguments, e.g.
-                    cast_type    → {"dtype": "float64"}
-                    fill_nulls   → {"strategy": "mean" | "zero" | "forward"}
-                    rename_column→ {"new_name": "revenue"}
-                    split_column → {"delimiter": "_", "new_cols": ["a","b"]}
-                    drop_rows    → {"condition": "revenue < 0"}
-                    fix_column   → {"transform": "strip_currency"}
-    """
-
+    """Corrective operation applied to the broken DataFrame."""
     action_type: str = "done"
     column: Optional[str] = None
-    params: Dict[str, Any] = field(default_factory=dict)
+    params: Dict[str, Any] = Field(default_factory=dict)
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         if self.action_type not in VALID_ACTION_TYPES:
             raise ValueError(
                 f"Unknown action_type '{self.action_type}'. "
-                f"Valid types: {sorted(VALID_ACTION_TYPES)}"
+                f"Valid: {sorted(VALID_ACTION_TYPES)}"
             )
 
 
-# ---------------------------------------------------------------------------
-# Observation  (reward + done live here per OpenEnv spec)
-# ---------------------------------------------------------------------------
-
-@dataclass(kw_only=True)
 class PipelineObservation(Observation):
-    """
-    Full observation returned after reset() or step().
-
-    task_id          : which task is running ("easy" | "medium" | "hard")
-    step             : current step number (0-indexed at reset)
-    dataframe_json   : current DataFrame as JSON string (orient="split")
-    schema           : list of {name, dtype, nullable, n_nulls, sample} dicts
-    error_log        : exceptions caught during last action (empty = clean)
-    previous_actions : history of action_type strings this episode
-    hint             : optional hint string, unlocked after 5 failed steps
-
-    Inherited from Observation base:
-        done     : bool  — True when episode has ended
-        reward   : float — cumulative reward for this step (0.0 – 1.0)
-        metadata : dict  — extra diagnostic info
-    """
-
+    """Full observation returned after reset() or step()."""
     task_id: str = ""
     step: int = 0
     dataframe_json: str = ""
-    column_schema: List[Dict[str, Any]] = field(default_factory=list)
-    error_log: List[str] = field(default_factory=list)
-    previous_actions: List[str] = field(default_factory=list)
+    column_schema: List[Dict[str, Any]] = Field(default_factory=list)
+    error_log: List[str] = Field(default_factory=list)
+    previous_actions: List[str] = Field(default_factory=list)
     hint: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
-# State  (episode metadata, returned by state())
-# ---------------------------------------------------------------------------
+# State is used directly from openenv per official docs — not subclassed
+# PipelineState is a plain Pydantic model for extra fields
+from pydantic import BaseModel
 
-@dataclass
-class PipelineState:
-    """
-    Current episode state, returned by env.state property.
-    Standalone dataclass — does not extend openenv State base.
-    """
+class PipelineState(BaseModel):
+    """Episode metadata returned by env.state property."""
     episode_id: str = ""
     step_count: int = 0
     accumulated_reward: float = 0.0
     last_action_type: str = ""
-    consecutive_loops: int = 0
     task_id: str = ""
     is_done: bool = False
