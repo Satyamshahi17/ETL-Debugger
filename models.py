@@ -115,19 +115,13 @@ class PipelineObservation(Observation):
 # ---------------------------------------------------------------------------
 
 @dataclass
-class PipelineState(State):
+class PipelineState:
     """
     Current episode state, returned by env.state property.
-
-    Extends the base State (episode_id, step_count) with pipeline-specific
-    tracking fields used internally by the environment.
-
-    accumulated_reward : running reward total
-    last_action_type   : most recent action taken
-    consecutive_loops  : count of repeated identical action sequences
-    task_id            : active task
+    Standalone dataclass — does not extend openenv State base.
     """
-
+    episode_id: str = ""
+    step_count: int = 0
     accumulated_reward: float = 0.0
     last_action_type: str = ""
     consecutive_loops: int = 0
