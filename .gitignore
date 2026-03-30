@@ -1,7 +1,6 @@
 __pycache__/ 
 .venv/ 
 etl_debugger.egg-info/ 
-uv.lock 
 outputs/ 
 *.pyc 
 .env 
