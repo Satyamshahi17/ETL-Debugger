@@ -44,14 +44,6 @@ def root():
         "endpoints": ["/reset", "/step", "/state", "/health"]
     }
 
-@app.get("/web")
-def web():
-    return JSONResponse(content={
-        "name": "ETLDebugger",
-        "description": "OpenEnv-compliant ETL pipeline debugging environment",
-        "docs": "/docs",
-        "endpoints": ["/reset", "/step", "/state", "/health"]
-    })
 
 @app.post("/reset")
 def reset():
@@ -104,3 +96,12 @@ def _obs_to_dict(obs: PipelineObservation) -> dict:
         "reward":           obs.reward,
         "metadata":         obs.metadata,
     }
+
+
+def main():
+    import uvicorn
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
+
+
+if __name__ == "__main__":
+    main()
