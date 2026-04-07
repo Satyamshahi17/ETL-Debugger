@@ -21,26 +21,6 @@ except ImportError:
         metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
-# VALID_ACTION_TYPES ={
-#     "fix_column", "cast_type", "drop_rows", "rename_column",
-#     "fill_nulls", "split_column", "merge_columns", "reorder_columns", "done",
-# }
-
-
-# class PipelineAction(Action):
-#     """Corrective operation applied to the broken DataFrame."""
-#     action_type: str = "done"
-#     column: Optional[str] = None
-#     params: Dict[str, Any] = Field(default_factory=dict)
-
-#     def model_post_init(self, __context: Any) -> None:
-#         if self.action_type not in VALID_ACTION_TYPES:
-#             raise ValueError(
-#                 f"Unknown action_type '{self.action_type}'. "
-#                 f"Valid: {sorted(VALID_ACTION_TYPES)}"
-#             )
-
-
 ActionType = Literal[
     "fix_column", "cast_type", "drop_rows", "rename_column",
     "fill_nulls", "split_column", "merge_columns", "reorder_columns", "done"
