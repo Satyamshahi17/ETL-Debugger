@@ -84,7 +84,7 @@ ETLDebugger ships with three tasks of increasing difficulty, each with a determi
 {"action_type": "done"}
 ```
 
-**Expected GPT-4o score:** `0.92`
+**Llama-3.1-8b-instant score:** `1.00`
 
 ---
 
@@ -101,7 +101,7 @@ ETLDebugger ships with three tasks of increasing difficulty, each with a determi
 {"action_type": "done"}
 ```
 
-**Expected GPT-4o score:** `0.65`
+**Llama-3.1-8b-instant score:** `0.76`
 
 ---
 
@@ -111,7 +111,7 @@ ETLDebugger ships with three tasks of increasing difficulty, each with a determi
 
 **What the agent must do:** Audit row counts, detect the statistical anomaly in category D, and identify both bugs without any error message to guide it.
 
-**Expected GPT-4o score:** `0.31`
+**Llama-3.1-8b-instant score:** `0.69`
 
 ---
 
@@ -143,7 +143,7 @@ Each task has a standalone deterministic grader in `graders/`. Graders are calle
 | `grader_medium.py` | user_id present (not userId), name/tier not null, row count, value correctness | yes — per check |
 | `grader_hard.py` | row count within 2%, date range correctness, category D totals fixed, amount distribution | yes — per check |
 
-All graders are **deterministic and reproducible** — same DataFrame always produces the same score.
+All graders are **deterministic and reproducible**.
 
 ---
 
@@ -250,7 +250,6 @@ etl-debugger/
 ```bash
 git clone https://github.com/YOUR_USERNAME/etl-debugger
 cd etl-debugger
-bash setup.sh          # creates venv, installs deps, runs validate.py
 ```
 
 Or manually:
