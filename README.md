@@ -300,21 +300,6 @@ python inference.py
 docker build -f server/Dockerfile -t etl-debugger .
 docker run -p 8000:8000 -e TASK_ID=easy etl-debugger
 ```
-
----
-
-## Baseline Scores
-
-Measured with `gpt-4o`, `temperature=0`, deterministic graders.
-
-| Task | Difficulty | Score | Steps |
-|------|------------|-------|-------|
-| easy | Type mismatch | 0.92 | 3 |
-| medium | Join key mismatch | 0.65 | 5 |
-| hard | Silent corruption | 0.31 | 12 |
-
----
-
 ## OpenEnv Compliance
 
 | Requirement | Status |
