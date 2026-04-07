@@ -6,7 +6,7 @@ Imports from openenv.core.env_server.types as specified.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import Field
 
 try:
@@ -21,25 +21,43 @@ except ImportError:
         metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
-VALID_ACTION_TYPES = {
-    "fix_column", "cast_type", "drop_rows", "rename_column",
-    "fill_nulls", "split_column", "merge_columns", "reorder_columns", "done",
-}
+# VALID_ACTION_TYPES ={
+#     "fix_column", "cast_type", "drop_rows", "rename_column",
+#     "fill_nulls", "split_column", "merge_columns", "reorder_columns", "done",
+# }
 
+
+# class PipelineAction(Action):
+#     """Corrective operation applied to the broken DataFrame."""
+#     action_type: str = "done"
+#     column: Optional[str] = None
+#     params: Dict[str, Any] = Field(default_factory=dict)
+
+#     def model_post_init(self, __context: Any) -> None:
+#         if self.action_type not in VALID_ACTION_TYPES:
+#             raise ValueError(
+#                 f"Unknown action_type '{self.action_type}'. "
+#                 f"Valid: {sorted(VALID_ACTION_TYPES)}"
+#             )
+
+
+ActionType = Literal[
+    "fix_column", "cast_type", "drop_rows", "rename_column",
+    "fill_nulls", "split_column", "merge_columns", "reorder_columns", "done"
+]
 
 class PipelineAction(Action):
     """Corrective operation applied to the broken DataFrame."""
-    action_type: str = "done"
+    action_type: ActionType = "done"
     column: Optional[str] = None
     params: Dict[str, Any] = Field(default_factory=dict)
 
-    def model_post_init(self, __context: Any) -> None:
-        if self.action_type not in VALID_ACTION_TYPES:
-            raise ValueError(
-                f"Unknown action_type '{self.action_type}'. "
-                f"Valid: {sorted(VALID_ACTION_TYPES)}"
-            )
-
+    def __init__(self, *args, **kwargs):
+        if args:
+            keys = ["action_type", "column", "params"]
+            for i, val in enumerate(args):
+                kwargs[keys[i]] = val
+        super().__init__(**kwargs)
 
 class PipelineObservation(Observation):
     """Full observation returned after reset() or step()."""
@@ -50,6 +68,14 @@ class PipelineObservation(Observation):
     error_log: List[str] = Field(default_factory=list)
     previous_actions: List[str] = Field(default_factory=list)
     hint: Optional[str] = None
+
+    @property
+    def schema(self):
+        """
+        Intercepts test suite calls to obs.schema and prevents 
+        Pydantic from returning its built-in schema() method.
+        """
+        return self.column_schema
 
 
 # State is used directly from openenv per official docs — not subclassed
